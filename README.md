@@ -59,7 +59,8 @@ npm run example   # opens http://localhost:5173
 - **Google Consent Mode v2** — pushes `default` (all denied) on mount and `update` on
   the visitor's choice, mapping the four categories to the right Consent Mode signals.
 - **Persistent & versioned** — the choice is stored in a cookie for one year and
-  restored on the next visit; bumping the schema version re-prompts everyone.
+  restored on the next visit; the stored value is versioned, so a future release can
+  re-prompt everyone after a policy change.
 - **Familiar tabbed UX** — Consent / Details / About tabs, four categories, a per-cookie
   accordion. Recognisable to visitors, nothing for you to design.
 - **10 built-in languages** — English (default), German, French, Spanish, Italian,

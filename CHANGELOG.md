@@ -4,6 +4,13 @@ All notable changes to consentric are documented here. This project follows
 [Semantic Versioning](https://semver.org/) and the
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.1] — 2026-06-15
+
+### Changed
+
+- Drop source maps from the published package — smaller install, and runtime is
+  unaffected since source maps are never bundled into consumers' apps.
+
 ## [1.0.0] — 2026-06-15
 
 Initial release.
@@ -27,4 +34,5 @@ Initial release.
 - Ships as a Client Component (`"use client"`) for the Next.js App Router.
 - ESM + CJS builds with TypeScript types; zero runtime dependencies, zero Tailwind.
 
+[1.0.1]: https://github.com/msalecki/consentric/releases/tag/v1.0.1
 [1.0.0]: https://github.com/msalecki/consentric/releases/tag/v1.0.0
