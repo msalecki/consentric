@@ -1,0 +1,68 @@
+{
+  "name": "consentric",
+  "version": "1.0.0",
+  "description": "Self-contained, configurable GDPR cookie consent for React. Google Consent Mode v2, 10 built-in languages, zero dependencies, zero Tailwind.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/add-directive.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "example": "vite",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "cookie-consent",
+    "gdpr",
+    "consent",
+    "consent-mode",
+    "cookie-banner",
+    "privacy",
+    "i18n",
+    "localization"
+  ],
+  "author": "salecki.digital <m.salecki@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msalecki/consentric.git"
+  },
+  "homepage": "https://github.com/msalecki/consentric#readme",
+  "bugs": "https://github.com/msalecki/consentric/issues",
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^29.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.11",
+    "vitest": "^4.1.8"
+  }
+}
