@@ -52,7 +52,8 @@
     "react": ">=17"
   },
   "overrides": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "undici": "^7.28.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
