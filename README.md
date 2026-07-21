@@ -79,7 +79,7 @@ npm run example   # opens http://localhost:5173
 - **Zero dependencies, zero Tailwind** — styles are scoped and injected; colours come
   from props via CSS variables, so it drops into any React project and looks identical
   regardless of the host's styling.
-- **Small & self-contained** — one component with all 10 languages, ~15 KB gzipped;
+- **Small & self-contained** — one component with all 10 languages, ~16 KB gzipped;
   ships ESM + CJS with types, `sideEffects: false`.
 
 ## Install
