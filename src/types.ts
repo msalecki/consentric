@@ -28,6 +28,42 @@ export interface CategoryContent {
   cookies?: CookieInfo[];
 }
 
+/** A single theme's colour palette. Every key is optional; anything omitted falls
+ *  back to the built-in default for the active theme. The last six ("overlay")
+ *  tokens are derived from `text` via `color-mix` when omitted, so a light theme
+ *  works from `brand`/`surface`/`text` alone — override them only for fine control. */
+export interface Palette {
+  brand?: string;
+  brandDeep?: string;
+  surface?: string;
+  surfaceAlt?: string;
+  text?: string;
+  textMuted?: string;
+  backdrop?: string;
+  /** Text/icon colour on top of `brand` (primary button, toggle knob, FAB icon). */
+  onBrand?: string;
+  /** Hairlines and button borders. Default: `color-mix` of `text`. */
+  border?: string;
+  /** Button hover fill. Default: `color-mix` of `text`. */
+  hover?: string;
+  /** Toggle track when off. Default: `color-mix` of `text`. */
+  trackOff?: string;
+  /** Count-badge background. Default: `color-mix` of `text`. */
+  badgeBg?: string;
+  /** Cookie-row background. Default: `color-mix` of `text`. */
+  cookieBg?: string;
+  /** Policy-link colour on the About tab. Default: `brand`. */
+  link?: string;
+}
+
+/** The `colors` prop. Either one palette (pinned to both themes — back-compatible
+ *  with v1) or a `{ light, dark }` pair the component switches between by theme. */
+export type ColorsProp = Palette | { light?: Palette; dark?: Palette };
+
+/** A brand mark. Either one node (both themes) or a `{ light, dark }` pair the
+ *  component swaps by the active theme — so the logo follows light/dark too. */
+export type LogoProp = ReactNode | { light?: ReactNode; dark?: ReactNode };
+
 /** Per-category overrides. The four keys are fixed (they map to Consent Mode signals). */
 export interface CategoriesConfig {
   necessary?: CategoryContent;
@@ -70,8 +106,9 @@ export interface CookieConsentProps {
   cookieName?: string;
   /** Operator / brand name shown in the header and About panel. */
   company?: string;
-  /** Optional brand mark for the header (e.g. an <svg/> or <img/>). */
-  logo?: ReactNode;
+  /** Optional brand mark for the header (an <svg/> or <img/>). Pass a single node,
+   *  or `{ light, dark }` to swap the mark by theme. */
+  logo?: LogoProp;
   privacyUrl?: string;
   termsUrl?: string;
   /** Built-in language pack to use (e.g. 'de', 'pl'). English is the default and
@@ -83,23 +120,33 @@ export interface CookieConsentProps {
   defaultOpen?: boolean;
   /** Tab to show first. Default: 'consent'. */
   defaultTab?: 'consent' | 'details' | 'about';
-  /** Brand palette. Defaults match the dark reference theme. For a light theme,
-   *  also set `onBrand` to a colour that reads on top of `brand`. */
-  colors?: {
-    brand?: string;
-    brandDeep?: string;
-    surface?: string;
-    surfaceAlt?: string;
-    text?: string;
-    textMuted?: string;
-    backdrop?: string;
-    /** Text/icon colour on top of `brand` (primary button). Default: `surface`. */
-    onBrand?: string;
-  };
+  /** Which theme to render. `'auto'` (default) follows the OS `prefers-color-scheme`
+   *  and re-renders when it changes; `'light'`/`'dark'` pin it. Only affects which
+   *  half of a `{ light, dark }` `colors`/`logo` is used — a single palette applies
+   *  to both themes. */
+  theme?: 'auto' | 'light' | 'dark';
+  /** Brand palette. Either one palette (applied to both themes) or `{ light, dark }`.
+   *  Built-in defaults cover both themes; a light theme works from `brand`/`surface`/
+   *  `text` alone (the overlay tokens are derived from `text`). */
+  colors?: ColorsProp;
   /** Per-category content overrides (names, descriptions, cookie tables). */
   categories?: CategoriesConfig;
   /** UI string overrides for localisation. */
   labels?: ConsentLabels;
+  /** Which action button gets primary (filled/brand) emphasis.
+   *  - `'save'` (default): "Save choices" is emphasised only once the visitor turns
+   *    an optional category on — Accept/Deny stay equal-weight otherwise, the
+   *    GDPR-friendly default (regulators expect no dark patterns).
+   *  - `'allowAll'`: "Allow all" is always emphasised (familiar consumer look).
+   *  - `'none'`: no button is ever emphasised. */
+  primaryAction?: 'save' | 'allowAll' | 'none';
+  /** Defer the first-visit auto-open until the browser is idle (double-rAF +
+   *  `requestIdleCallback`, capped ~600ms). Keeps the full-screen card from being
+   *  the only thing painted on first frame, which otherwise starves Lighthouse of
+   *  an LCP candidate (`NO_LCP`). Ignored when `defaultOpen`. Default: true. */
+  deferOpen?: boolean;
+  /** Override the font stack. Default: the system UI stack. */
+  fontFamily?: string;
   /** Fired after the user makes (or changes) a choice. */
   onChange?: (choices: Choices) => void;
   /** When a category is denied or revoked, delete the cookies declared in its

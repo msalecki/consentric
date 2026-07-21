@@ -62,7 +62,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { CatId, CategoryContent, Choices, ConsentLabels, CookieConsentProps } from './types';
+import type { CatId, CategoryContent, Choices, ConsentLabels, CookieConsentProps, Palette } from './types';
 import { applyConsent, clearDeniedCookies, gtag, readCookie, writeCookie } from './cookies';
 import { resolveLocale } from './locales';
 import type { LocalePack } from './locales';
@@ -72,6 +72,31 @@ type TabId = 'consent' | 'details' | 'about';
 
 const TABS: readonly TabId[] = ['consent', 'details', 'about'];
 const EMPTY: Choices = { preferences: false, statistics: false, marketing: false };
+
+/** Built-in defaults for each theme. The base eight tokens are set explicitly; the
+ *  overlay tokens (border/hover/…) are left to `color-mix` off `text`, so both
+ *  themes look right without listing every hairline. `onBrand` is a dark ink that
+ *  reads on the default warm `brand` in either theme. */
+const DARK_PALETTE: Required<Pick<Palette, 'brand' | 'brandDeep' | 'surface' | 'surfaceAlt' | 'text' | 'textMuted' | 'backdrop' | 'onBrand'>> = {
+  brand: '#ff5c3a',
+  brandDeep: '#eb5535',
+  surface: '#0c0814',
+  surfaceAlt: 'rgba(255,255,255,0.035)',
+  text: '#f4ede3',
+  textMuted: '#a89cb8',
+  backdrop: 'rgba(7,5,13,0.8)',
+  onBrand: '#0c0814',
+};
+const LIGHT_PALETTE: typeof DARK_PALETTE = {
+  brand: '#ff5c3a',
+  brandDeep: '#eb5535',
+  surface: '#ffffff',
+  surfaceAlt: 'rgba(18,12,28,0.04)',
+  text: '#1a1523',
+  textMuted: '#6b6577',
+  backdrop: 'rgba(18,12,28,0.4)',
+  onBrand: '#1a1523',
+};
 
 const DEFAULT_LABELS: Required<ConsentLabels> = {
   tabConsent: 'Consent',
@@ -193,9 +218,13 @@ export function CookieConsent({
   locale,
   defaultOpen = false,
   defaultTab,
+  theme = 'auto',
   colors,
   categories,
   labels,
+  primaryAction = 'save',
+  deferOpen = true,
+  fontFamily,
   onChange,
   autoClearCookies = true,
 }: CookieConsentProps) {
@@ -205,6 +234,13 @@ export function CookieConsent({
   const [tab, setTab] = useState<TabId>(defaultTab ?? 'consent');
   const [choices, setChoices] = useState<Choices>(EMPTY);
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
+  // System colour scheme, tracked only while `theme` is 'auto'. Defaults to dark
+  // when it can't be read (SSR / no matchMedia), preserving the v1 dark look.
+  const [sysDark, setSysDark] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  const resolvedTheme: 'light' | 'dark' = theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : sysDark ? 'dark' : 'light';
   const cardRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -250,7 +286,35 @@ export function CookieConsent({
       applyConsent(saved);
       setDecided(true);
     }
-    if (!saved || defaultOpen) setOpen(true);
+    // Previews/screenshots want it open immediately; a stored choice means no banner.
+    if (defaultOpen) {
+      setOpen(true);
+      return;
+    }
+    if (saved) return;
+    // Fresh first visit: optionally defer the auto-open past first paint so the
+    // full-screen card isn't the only thing on frame one (Lighthouse NO_LCP).
+    if (!deferOpen || typeof window === 'undefined') {
+      setOpen(true);
+      return;
+    }
+    let cancel = () => {};
+    const openNow = () => setOpen(true);
+    const schedule = () => {
+      const ric = window.requestIdleCallback;
+      if (typeof ric === 'function') {
+        const id = ric(openNow, { timeout: 600 });
+        cancel = () => window.cancelIdleCallback?.(id);
+      } else {
+        const id = window.setTimeout(openNow, 600);
+        cancel = () => window.clearTimeout(id);
+      }
+    };
+    const raf = requestAnimationFrame(() => requestAnimationFrame(schedule));
+    return () => {
+      cancelAnimationFrame(raf);
+      cancel();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -309,6 +373,21 @@ export function CookieConsent({
     return () => window.removeEventListener('keydown', onKey);
   }, [decided]);
 
+  // Follow the OS colour scheme while theme is 'auto'.
+  useEffect(() => {
+    if (theme !== 'auto' || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const on = () => setSysDark(mq.matches);
+    on();
+    if (mq.addEventListener) {
+      mq.addEventListener('change', on);
+      return () => mq.removeEventListener('change', on);
+    }
+    // Safari < 14 fallback.
+    mq.addListener(on);
+    return () => mq.removeListener(on);
+  }, [theme]);
+
   const commit = (ch: Choices) => {
     writeCookie(cookieName, ch);
     applyConsent(ch);
@@ -340,31 +419,52 @@ export function CookieConsent({
     requestAnimationFrame(() => document.getElementById('tc-tab-' + id)?.focus());
   };
 
-  const palette = {
-    brand: colors?.brand ?? '#ff5c3a',
-    brandDeep: colors?.brandDeep ?? '#eb5535',
-    surface: colors?.surface ?? '#0c0814',
-    surfaceAlt: colors?.surfaceAlt ?? 'rgba(255,255,255,0.035)',
-    text: colors?.text ?? '#f4ede3',
-    textMuted: colors?.textMuted ?? '#a89cb8',
-    backdrop: colors?.backdrop ?? 'rgba(7,5,13,0.8)',
-    onBrand: colors?.onBrand ?? colors?.surface ?? '#0c0814',
-  };
+  // Pick the palette for the active theme. A single palette (no light/dark keys)
+  // applies to both themes — back-compatible with v1; a { light, dark } pair is
+  // split by `resolvedTheme`. User values overlay the built-in theme defaults.
+  const userPalette: Palette | undefined = colors
+    ? 'light' in colors || 'dark' in colors
+      ? (colors as { light?: Palette; dark?: Palette })[resolvedTheme]
+      : (colors as Palette)
+    : undefined;
+  const P: Palette = { ...(resolvedTheme === 'light' ? LIGHT_PALETTE : DARK_PALETTE), ...userPalette };
+  // Overlay tokens are derived from `text` via color-mix, so light themes work
+  // from brand/surface/text alone; the neutral rgba fallbacks in the CSS cover
+  // browsers without color-mix. onBrand doubles as the FAB/knob-on-brand ink.
+  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
   const vars = {
-    '--tc-brand': palette.brand,
-    '--tc-brand-deep': palette.brandDeep,
-    '--tc-surface': palette.surface,
-    '--tc-surface-alt': palette.surfaceAlt,
-    '--tc-text': palette.text,
-    '--tc-text-muted': palette.textMuted,
-    '--tc-backdrop': palette.backdrop,
-    '--tc-on-brand': palette.onBrand,
+    '--tc-brand': P.brand,
+    '--tc-brand-deep': P.brandDeep,
+    '--tc-surface': P.surface,
+    '--tc-surface-alt': P.surfaceAlt,
+    '--tc-text': P.text,
+    '--tc-text-muted': P.textMuted,
+    '--tc-backdrop': P.backdrop,
+    '--tc-on-brand': P.onBrand,
+    '--tc-line': P.border ?? mix(P.text as string, 7),
+    '--tc-btn-border': P.border ?? mix(P.text as string, 14),
+    '--tc-btn-hover': P.hover ?? mix(P.text as string, 6),
+    '--tc-track-off': P.trackOff ?? mix(P.text as string, 15),
+    '--tc-badge-bg': P.badgeBg ?? mix(P.text as string, 10),
+    '--tc-cookie-bg': P.cookieBg ?? mix(P.text as string, 3),
+    '--tc-link': P.link ?? P.brand,
+    '--tc-font': fontFamily,
   } as CSSProperties;
 
+  // Resolve the logo for the active theme ({ light, dark } vs a single node).
+  const logoNode =
+    logo && typeof logo === 'object' && !('$$typeof' in (logo as object)) && ('light' in logo || 'dark' in logo)
+      ? (logo as { light?: ReactNode; dark?: ReactNode })[resolvedTheme]
+      : (logo as ReactNode);
+
   const tabLabel = (t: TabId) => (t === 'consent' ? L.tabConsent : t === 'details' ? L.tabDetails : L.tabAbout);
-  // Highlight "Save choices" only when there's actually an optional category on —
-  // deselecting everything makes it equivalent to "Deny", so it stops being primary.
+  // Which action reads as primary. In the default 'save' mode "Save choices" is
+  // emphasised only when an optional category is on (deselecting everything makes it
+  // equivalent to "Deny", so it stops being primary). 'allowAll' always emphasises
+  // "Allow all"; 'none' emphasises nothing.
   const hasSelection = choices.preferences || choices.statistics || choices.marketing;
+  const savePrimary = primaryAction === 'save' && hasSelection;
+  const allowPrimary = primaryAction === 'allowAll';
 
   return (
     <>
@@ -393,7 +493,7 @@ export function CookieConsent({
                   </button>
                 ))}
               </div>
-              {logo ?? (company ? <span className="tc-logo">{company}</span> : null)}
+              {logoNode ?? (company ? <span className="tc-logo">{company}</span> : null)}
             </div>
             <hr className="tc-hr" />
 
@@ -481,10 +581,10 @@ export function CookieConsent({
               <button type="button" className="tc-btn" onClick={denyAll}>
                 {L.deny}
               </button>
-              <button type="button" className={'tc-btn' + (hasSelection ? ' tc-btn-primary' : '')} onClick={saveChoices}>
+              <button type="button" className={'tc-btn' + (savePrimary ? ' tc-btn-primary' : '')} onClick={saveChoices}>
                 {L.save}
               </button>
-              <button type="button" className="tc-btn" onClick={acceptAll}>
+              <button type="button" className={'tc-btn' + (allowPrimary ? ' tc-btn-primary' : '')} onClick={acceptAll}>
                 {L.allowAll}
               </button>
             </div>

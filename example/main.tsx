@@ -1,7 +1,8 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CookieConsent, SUPPORTED_LOCALES } from '../src';
-import saleckiLogo from './logo-salecki.svg';
+import saleckiLogoDark from './logo-dark.svg';
+import saleckiLogoLight from './logo-light.svg';
 
 // salecki.digital brand palette (from the live site's CSS variables).
 const SALECKI_DARK = {
@@ -26,10 +27,15 @@ const SALECKI_LIGHT = {
   onBrand: '#0a0a0c',
 };
 
-const logo = <img src={saleckiLogo} alt="salecki.digital" style={{ height: 22, display: 'block' }} />;
+// Per-theme mark: the dark wordmark is white ink (for dark surfaces), the light
+// one is dark ink (for light surfaces). consentric swaps them by the active theme.
+const logoStyle = { height: 22, display: 'block' } as const;
+const logo = {
+  light: <img src={saleckiLogoLight} alt="salecki.digital" style={logoStyle} />,
+  dark: <img src={saleckiLogoDark} alt="salecki.digital" style={logoStyle} />,
+};
 
 const params = new URLSearchParams(location.search);
-const themeOf = (v: string | null) => (v === 'light' ? SALECKI_LIGHT : SALECKI_DARK);
 type Tab = 'consent' | 'details' | 'about';
 
 function Playground() {
@@ -67,13 +73,15 @@ function Playground() {
       </div>
 
       <CookieConsent
-        key={locale + theme}
+        key={locale}
         company="salecki.digital"
         logo={logo}
         locale={locale}
         privacyUrl="#privacy"
         termsUrl="#cookies"
-        colors={theme === 'light' ? SALECKI_LIGHT : SALECKI_DARK}
+        theme={theme}
+        colors={{ light: SALECKI_LIGHT, dark: SALECKI_DARK }}
+        primaryAction="allowAll"
       />
     </main>
   );
@@ -90,7 +98,9 @@ function Bare() {
       locale={params.get('locale') ?? 'en'}
       privacyUrl="#privacy"
       termsUrl="#cookies"
-      colors={themeOf(params.get('theme'))}
+      theme={params.get('theme') === 'light' ? 'light' : 'dark'}
+      colors={{ light: SALECKI_LIGHT, dark: SALECKI_DARK }}
+      primaryAction="allowAll"
       defaultOpen
       defaultTab={(params.get('tab') as Tab) ?? 'consent'}
     />

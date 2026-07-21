@@ -6,6 +6,9 @@ export type {
   CategoryContent,
   CategoriesConfig,
   ConsentLabels,
+  Palette,
+  ColorsProp,
+  LogoProp,
 } from './types';
 export { LOCALES, SUPPORTED_LOCALES, resolveLocale } from './locales';
 export type { LocalePack, LocaleCategoryText, LocaleCookieText } from './locales';

@@ -66,10 +66,14 @@ npm run example   # opens http://localhost:5173
 - **10 built-in languages** — English (default), German, French, Spanish, Italian,
   Portuguese, Dutch, Polish, Czech and Slovak, picked with one `locale` prop. Every
   category, cookie row and UI string is also overridable for any other language.
+- **Light & dark** — follows the OS `prefers-color-scheme` by default; ships light and
+  dark palettes, or pass your own (one for both themes, or `{ light, dark }`). Borders and
+  fills derive from your `text` colour, so a light theme needs no host-CSS overrides.
 - **Accessible** — focus-trapped modal, focus restored on close, arrow-key tab
   navigation, full ARIA wiring, and `prefers-reduced-motion` support.
-- **No dark patterns** — "Allow all" and "Deny" get equal visual weight, the way EU
-  regulators expect a consent dialog to behave.
+- **No dark patterns by default** — "Allow all" and "Deny" get equal visual weight, the
+  way EU regulators expect a consent dialog to behave. If you want the familiar
+  emphasised "Allow all", opt in with `primaryAction="allowAll"`.
 - **Works with Next.js** — ships as a Client Component (`"use client"`), so it drops
   straight into the App Router.
 - **Zero dependencies, zero Tailwind** — styles are scoped and injected; colours come
@@ -115,9 +119,14 @@ the root of your app.
 | `locale` | `'en'` | Built-in language pack (`de`, `fr`, `es`, `it`, `pt`, `nl`, `pl`, `cs`, `sk`). English is the default and fallback; `pt-BR` resolves to `pt`. |
 | `defaultOpen` | `false` | Open the dialog on mount even if a choice is stored (for previews/Storybook). |
 | `defaultTab` | `'consent'` | Tab to show first: `consent` / `details` / `about`. |
-| `colors` | dark theme | `{ brand, brandDeep, surface, surfaceAlt, text, textMuted, backdrop, onBrand }`. |
+| `theme` | `'auto'` | `'auto'` follows the OS `prefers-color-scheme` (and re-renders on change); `'light'` / `'dark'` pin it. |
+| `colors` | light + dark | One palette (applied to both themes) **or** `{ light, dark }`. See [Light & dark themes](#light--dark-themes). |
+| `logo` | — | Brand mark. A single node, or `{ light, dark }` to swap it by theme. |
 | `categories` | built-in EN | Per-category content overrides — see below. |
 | `labels` | built-in EN | UI string overrides for localisation — see below. |
+| `primaryAction` | `'save'` | Which button gets brand emphasis: `'save'` (only once a category is on — equal-weight otherwise), `'allowAll'` (always), or `'none'`. |
+| `deferOpen` | `true` | Defer the first-visit auto-open past first paint (avoids Lighthouse `NO_LCP`). Ignored when `defaultOpen`. |
+| `fontFamily` | system stack | Override the font stack. |
 | `onChange` | — | `(choices) => void`, fired after the user makes or changes a choice. |
 | `autoClearCookies` | `true` | When a category is denied or revoked, delete the cookies declared in its table (names support a trailing `*` wildcard). The consent cookie is never touched. |
 
@@ -192,22 +201,68 @@ language.
 />
 ```
 
-## Light theme
+## Light & dark themes
 
-Defaults assume a dark `surface`. For a light theme, also set `onBrand` (the text/icon
-colour on top of the primary button) so it keeps enough contrast.
+The banner ships **built-in light and dark palettes** and, by default (`theme="auto"`),
+follows the visitor's OS `prefers-color-scheme` — re-rendering if they flip it. So the
+zero-config banner is light on a light OS and dark on a dark one. Pin it with
+`theme="light"` or `theme="dark"`.
+
+Borders, toggle tracks, badges and cookie rows are derived from `text` (via `color-mix`),
+so a **light theme works from just `brand` / `surface` / `text`** — no host-CSS overrides,
+nothing washed out on a light surface.
+
+### One palette, or one per theme
+
+Pass a **single palette** and it applies to both themes (this is the v1 behaviour — if you
+already pass `colors`, nothing changes):
+
+```tsx
+<CookieConsent colors={{ brand: '#FAE762', surface: '#050506', text: '#EDEDEF', onBrand: '#0a0a0c' }} />
+```
+
+Or pass **`{ light, dark }`** and the component switches with the theme:
 
 ```tsx
 <CookieConsent
+  theme="auto"                     // 'auto' | 'light' | 'dark'
   colors={{
-    brand: '#2563eb',
-    brandDeep: '#1d4ed8',
-    surface: '#ffffff',
-    surfaceAlt: 'rgba(0,0,0,0.04)',
-    text: '#0f172a',
-    textMuted: '#64748b',
-    backdrop: 'rgba(15,23,42,0.4)',
-    onBrand: '#ffffff',
+    light: { brand: '#2563eb', surface: '#ffffff', text: '#0f172a', textMuted: '#64748b' },
+    dark:  { brand: '#3b82f6', surface: '#0b1220', text: '#e5e7eb', textMuted: '#94a3b8' },
+  }}
+/>
+```
+
+Each palette key is optional and falls back to the built-in default for that theme:
+
+| Key | What it colours |
+|---|---|
+| `brand` / `brandDeep` | Primary button, active tab, toggle-on, links; `brandDeep` is the hover. |
+| `surface` / `surfaceAlt` | Card background / the raised category tiles. |
+| `text` / `textMuted` | Primary / secondary text. Overlays (borders, tracks, badges) derive from `text`. |
+| `backdrop` | The dimmed page behind the dialog. |
+| `onBrand` | Text/icon on top of `brand` — primary button label, toggle knob, FAB icon. Set this whenever `brand` is light/saturated. |
+| `border`, `hover`, `trackOff`, `badgeBg`, `cookieBg`, `link` | Fine control of the derived overlay tokens — override only if you need to. |
+
+### Following a `data-theme` host
+
+Already flip your own CSS variables on `html[data-theme]`? Point `colors` at them and the
+banner follows your toggle with no JS:
+
+```tsx
+<CookieConsent colors={{ surface: 'var(--bg)', text: 'var(--fg)', textMuted: 'var(--fg-muted)', brand: '#3c3fde', onBrand: '#fff' }} />
+```
+
+### Per-theme logo
+
+Pass `{ light, dark }` to `logo` so the mark swaps with the theme (e.g. a dark wordmark on
+light, a light one on dark):
+
+```tsx
+<CookieConsent
+  logo={{
+    light: <img src="/logo.svg" alt="Acme" height={20} />,
+    dark:  <img src="/logo-dark.svg" alt="Acme" height={20} />,
   }}
 />
 ```
