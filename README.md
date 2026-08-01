@@ -113,7 +113,7 @@ the root of your app.
 | `manageDefault` | `true` | Push gtag consent `default` (all denied) on mount. Set `false` if you set it in `<head>` before GTM (strict timing — see below). |
 | `cookieName` | `'site_consent'` | Consent cookie name. Must match the head/GTM snippet if you use one. |
 | `company` | — | Operator / brand name shown in the header and About panel. |
-| `logo` | — | Optional brand mark (an `<svg/>` or `<img/>`). |
+| `logo` | — | Optional brand mark (an `<svg/>` or `<img/>`). A single node, or `{ light, dark }` to swap it by theme. |
 | `privacyUrl` | `'/privacy'` | Privacy policy link. |
 | `termsUrl` | `'/privacy#cookies'` | Cookie/terms link. |
 | `locale` | `'en'` | Built-in language pack (`de`, `fr`, `es`, `it`, `pt`, `nl`, `pl`, `cs`, `sk`). English is the default and fallback; `pt-BR` resolves to `pt`. |
@@ -121,7 +121,6 @@ the root of your app.
 | `defaultTab` | `'consent'` | Tab to show first: `consent` / `details` / `about`. |
 | `theme` | `'auto'` | `'auto'` follows the OS `prefers-color-scheme` (and re-renders on change); `'light'` / `'dark'` pin it. |
 | `colors` | light + dark | One palette (applied to both themes) **or** `{ light, dark }`. See [Light & dark themes](#light--dark-themes). |
-| `logo` | — | Brand mark. A single node, or `{ light, dark }` to swap it by theme. |
 | `categories` | built-in EN | Per-category content overrides — see below. |
 | `labels` | built-in EN | UI string overrides for localisation — see below. |
 | `primaryAction` | `'save'` | Which button gets brand emphasis: `'save'` (only once a category is on — equal-weight otherwise), `'allowAll'` (always), or `'none'`. |
@@ -292,6 +291,10 @@ which shift if the actions ever change:
 ```css
 .tc-btn-save { border-color: transparent; background: var(--tc-brand); color: var(--tc-on-brand); }
 ```
+
+Whichever button `primaryAction` emphasises also gets `tc-btn-primary` — that's the class
+carrying the filled/brand look, so match on it if you want to restyle "the emphasised one"
+without caring which action it is.
 
 ## Strict Consent Mode timing (recommended)
 

@@ -4,6 +4,23 @@ All notable changes to consentric are documented here. This project follows
 [Semantic Versioning](https://semver.org/) and the
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [2.1.0] — 2026-08-01
+
+Two additions from auditing the in-house deployments. Neither changes rendering
+or behaviour.
+
+### Added
+
+- **`readConsent` and `CONSENT_VERSION` exports.** Host code outside the
+  component — a `<head>` snippet, a tag loader, a non-React island — can read the
+  stored choice with `readConsent()` (defaults to the `site_consent` cookie name)
+  instead of re-implementing the cookie format and pinning the schema version by
+  hand, which would silently return `null` after a version bump.
+- **Per-action button classes** `tc-btn-deny`, `tc-btn-save`, `tc-btn-allow`
+  alongside `tc-btn`, so hosts restyling a single action no longer need
+  positional selectors (`:nth-child`, `:last-child`) that shift if the actions
+  change. The classes carry no styles of their own.
+
 ## [2.0.0] — 2026-07-21
 
 Themeable light/dark release. The banner now follows the OS colour scheme by
@@ -78,6 +95,7 @@ Initial release.
 - Ships as a Client Component (`"use client"`) for the Next.js App Router.
 - ESM + CJS builds with TypeScript types; zero runtime dependencies, zero Tailwind.
 
+[2.1.0]: https://github.com/msalecki/consentric/releases/tag/v2.1.0
 [2.0.0]: https://github.com/msalecki/consentric/releases/tag/v2.0.0
 [1.0.1]: https://github.com/msalecki/consentric/releases/tag/v1.0.1
 [1.0.0]: https://github.com/msalecki/consentric/releases/tag/v1.0.0

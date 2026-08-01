@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest published `2.0.x` release of `consentric` receives security fixes.
+The latest published `2.1.x` release of `consentric` receives security fixes.
 
 ## Reporting a vulnerability
 
