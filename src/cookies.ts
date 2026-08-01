@@ -31,7 +31,11 @@ export function applyConsent(ch: Choices): void {
   });
 }
 
-export function readCookie(name: string): Choices | null {
+/** Read the stored choice, or null when there is none (or it predates `VERSION`).
+ *  Exported as `readConsent` so host code outside the component — a `<head>`
+ *  snippet, a tag loader, a non-React island — can gate on the same decision
+ *  without re-implementing the cookie format. */
+export function readCookie(name: string = 'site_consent'): Choices | null {
   try {
     const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
     if (!m) return null;

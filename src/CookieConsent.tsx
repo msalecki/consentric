@@ -577,14 +577,16 @@ export function CookieConsent({
             </div>
 
             <hr className="tc-hr" />
+            {/* tc-btn-deny/save/allow carry no styles of their own — they exist so a
+                host can restyle one action without a positional `:nth-child` selector. */}
             <div className="tc-actions">
-              <button type="button" className="tc-btn" onClick={denyAll}>
+              <button type="button" className="tc-btn tc-btn-deny" onClick={denyAll}>
                 {L.deny}
               </button>
-              <button type="button" className={'tc-btn' + (savePrimary ? ' tc-btn-primary' : '')} onClick={saveChoices}>
+              <button type="button" className={'tc-btn tc-btn-save' + (savePrimary ? ' tc-btn-primary' : '')} onClick={saveChoices}>
                 {L.save}
               </button>
-              <button type="button" className={'tc-btn' + (allowPrimary ? ' tc-btn-primary' : '')} onClick={acceptAll}>
+              <button type="button" className={'tc-btn tc-btn-allow' + (allowPrimary ? ' tc-btn-primary' : '')} onClick={acceptAll}>
                 {L.allowAll}
               </button>
             </div>

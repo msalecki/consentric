@@ -122,4 +122,11 @@ describe('CookieConsent', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Statistics' }));
     expect(save.className).toContain('tc-btn-primary');
   });
+
+  it('gives each action a stable class so hosts need no positional selector', () => {
+    render(<CookieConsent defaultOpen />);
+    expect(screen.getByRole('button', { name: 'Deny' }).className).toContain('tc-btn-deny');
+    expect(screen.getByRole('button', { name: 'Save choices' }).className).toContain('tc-btn-save');
+    expect(screen.getByRole('button', { name: 'Allow all' }).className).toContain('tc-btn-allow');
+  });
 });

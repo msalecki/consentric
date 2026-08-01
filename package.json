@@ -1,6 +1,6 @@
 {
   "name": "consentric",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Self-contained, configurable GDPR cookie consent for React. Google Consent Mode v2, 10 built-in languages, zero dependencies, zero Tailwind.",
   "type": "module",
   "main": "./dist/index.cjs",

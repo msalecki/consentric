@@ -10,5 +10,6 @@ export type {
   ColorsProp,
   LogoProp,
 } from './types';
+export { readCookie as readConsent, VERSION as CONSENT_VERSION } from './cookies';
 export { LOCALES, SUPPORTED_LOCALES, resolveLocale } from './locales';
 export type { LocalePack, LocaleCategoryText, LocaleCookieText } from './locales';

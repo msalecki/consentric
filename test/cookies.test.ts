@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { writeCookie, readCookie, clearDeniedCookies } from '../src/cookies';
+import { writeCookie, readCookie, clearDeniedCookies, VERSION } from '../src/cookies';
 
 function clearAllCookies() {
   for (const c of document.cookie.split(';')) {
@@ -21,6 +21,21 @@ describe('writeCookie / readCookie', () => {
     expect(readCookie('site_consent')).toBeNull();
     document.cookie = 'broken=not-json; path=/';
     expect(readCookie('broken')).toBeNull();
+  });
+
+  it('defaults to the default cookie name, so readConsent() takes no argument', () => {
+    const choice = { preferences: false, statistics: true, marketing: false };
+    writeCookie('site_consent', choice);
+    expect(readCookie()).toEqual(choice);
+  });
+});
+
+describe('public consent-reading API', () => {
+  it('re-exports the reader and the schema version host code must match', async () => {
+    const api = await import('../src/index');
+    expect(api.CONSENT_VERSION).toBe(VERSION);
+    writeCookie('site_consent', { preferences: true, statistics: false, marketing: false });
+    expect(api.readConsent()).toEqual({ preferences: true, statistics: false, marketing: false });
   });
 });
 

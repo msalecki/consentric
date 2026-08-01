@@ -267,6 +267,32 @@ light, a light one on dark):
 />
 ```
 
+## Reading the choice elsewhere
+
+`onChange` covers React code, but tag loaders, `<head>` snippets and non-React islands
+often need the same answer. Import the reader instead of re-parsing the cookie — that way
+a future schema bump can't leave your copy silently returning `null`:
+
+```ts
+import { readConsent, CONSENT_VERSION } from 'consentric';
+
+const choices = readConsent();          // or readConsent('my_cookie') for a custom cookieName
+if (choices?.marketing) loadPixel();    // null when there is no (current) decision yet
+```
+
+`CONSENT_VERSION` is the schema version written into the cookie — match it in any inline
+`<head>` snippet that reads the cookie before the bundle loads.
+
+## Styling hooks
+
+The three action buttons carry stable classes — `tc-btn-deny`, `tc-btn-save`,
+`tc-btn-allow` — alongside `tc-btn`. Target those rather than `:nth-child`/`:last-child`,
+which shift if the actions ever change:
+
+```css
+.tc-btn-save { border-color: transparent; background: var(--tc-brand); color: var(--tc-on-brand); }
+```
+
 ## Strict Consent Mode timing (recommended)
 
 For tags to be gated **before** GTM loads, set the default in `<head>` (before the
